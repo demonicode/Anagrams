@@ -33,11 +33,12 @@ public class AnagramDictionary {
     private static final int DEFAULT_WORD_LENGTH = 3;
     private static final int MAX_WORD_LENGTH = 7;
     private Random random = new Random();
-    private ArrayList<String> wordList=new ArrayList<String>();
-    private Map<String,ArrayList<String>> lettersToWord = new HashMap<String,ArrayList<String>>();
+    private ArrayList<String> wordListOfOne=new ArrayList<String>();
+    private Map<String,HashSet<String>> lettersToWord = new HashMap<String,HashSet<String>>();
     private Map<Integer,ArrayList<String>> sizeToWord = new HashMap<Integer, ArrayList<String>>();
     private HashSet wordSet = new HashSet();
     private int wordLength = DEFAULT_WORD_LENGTH;
+
 
 
     public String sortletters(String wordy){
@@ -66,27 +67,39 @@ public class AnagramDictionary {
         String line;
         while((line = in.readLine()) != null) {
             String word = line.trim();
-            wordList.add(word);
             wordSet.add(word);
             String sortedword = sortletters(word);
             if (!lettersToWord.containsKey(sortedword)) {
-                lettersToWord.put(sortedword, new ArrayList<String>());
+                lettersToWord.put(sortedword, new HashSet<String>());
             }
             lettersToWord.get(sortedword).add(word);
-            if (!sizeToWord.containsKey(word.length())) {
-                sizeToWord.put(word.length(), new ArrayList<String>());
+
+        }
+        Iterator it2 = wordSet.iterator();
+        while(it2.hasNext()){
+            String currentWord1 = (String) it2.next();
+            HashSet<String> result = new HashSet<String>();
+            result = getAnagramsWithOneMoreLetter(currentWord1);
+            if(result.size()>=MIN_NUM_ANAGRAMS){
+                wordListOfOne.add(currentWord1);
             }
-            sizeToWord.get(word.length()).add(word);
+        }
+        Iterator it3 = wordListOfOne.iterator();
+        while(it3.hasNext()) {
+            String currentWord2 = (String) it3.next();
+            if (!sizeToWord.containsKey(currentWord2.length())) {
+                sizeToWord.put(currentWord2.length(), new ArrayList<String>());
+            }
+            sizeToWord.get(currentWord2.length()).add(currentWord2);
         }
     }
 
 
     public boolean isGoodWord(String word, String base) {
         if(wordSet.contains(word)){
-            if(!word.toLowerCase().contains(base.toLowerCase()));{
+            if(!word.toLowerCase().contains(base.toLowerCase())){
                 return true;
             }
-
         }
         return false ;
     }
@@ -94,7 +107,7 @@ public class AnagramDictionary {
     public List<String> getAnagrams(String targetWord) {
         ArrayList<String> result = new ArrayList<String>();
         String sortedTargetWord = sortletters(targetWord.toLowerCase());
-        Iterator it = wordList.iterator();
+        Iterator it = wordSet.iterator();
         while(it.hasNext()){
             String nowWord = (String)it.next();
             String sortedNowWord = sortletters(nowWord.toLowerCase());
@@ -105,8 +118,8 @@ public class AnagramDictionary {
         return result;
     }
 
-    public List<String> getAnagramsWithOneMoreLetter(String word) {
-        ArrayList<String> result = new ArrayList<String>();
+    public HashSet<String> getAnagramsWithOneMoreLetter(String word) {
+        HashSet<String> result = new HashSet<String>();
         String wordIsSorted = sortletters(word);
         for(char i='a';i<='z';i++){
             String wordIsSorted2 = wordIsSorted + i;
@@ -114,7 +127,29 @@ public class AnagramDictionary {
             if(lettersToWord.containsKey(wordIsSorted2)){
                 Iterator it = lettersToWord.get(wordIsSorted2).iterator();
                 while(it.hasNext()){
-                    result.add((String) it.next());
+                    String current = (String) it.next();
+                    if(!current.toLowerCase().contains(word.toLowerCase()))
+                        result.add(current);
+                }
+            }
+        }
+        return result;
+    }
+
+    public HashSet<String> getAnagramsWithTwoMoreLetter(String word) {
+        HashSet<String> result = new HashSet<String>();
+        String wordIsSorted = sortletters(word);
+        for(char i='a';i<='z';i++){
+            for(char j='a';j<='z';j++) {
+                String wordIsSorted2 = wordIsSorted + i + j;
+                wordIsSorted2 = sortletters(wordIsSorted2.toLowerCase());
+                if (lettersToWord.containsKey(wordIsSorted2)) {
+                    Iterator it = lettersToWord.get(wordIsSorted2).iterator();
+                    while (it.hasNext()) {
+                        String current = (String) it.next();
+                        if(!current.toLowerCase().contains(word.toLowerCase()))
+                            result.add(current);
+                    }
                 }
             }
         }
@@ -123,15 +158,7 @@ public class AnagramDictionary {
 
     public String pickGoodStarterWord() {
         String nowWord;
-        while(true) {
-            nowWord = sizeToWord.get(wordLength).get(random.nextInt(sizeToWord.get(wordLength).size()));
-            List<String> result = new ArrayList<String>();
-            result = getAnagramsWithOneMoreLetter(nowWord);
-            if(result.size()>MIN_NUM_ANAGRAMS){
-                break;
-            }
-        }
-
+        nowWord = sizeToWord.get(wordLength).get(random.nextInt(sizeToWord.get(wordLength).size()));
         if(wordLength!=MAX_WORD_LENGTH)
             wordLength++;
         return nowWord;
